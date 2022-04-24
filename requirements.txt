@@ -1,0 +1,14 @@
+# pip install -U -r requirements.txt
+Cython
+numpy>=1.17
+opencv-python
+torch>=1.4
+matplotlib
+plotly >= 4.7
+pillow
+tensorboard
+PyYAML>=5.3
+torchvision
+scipy
+tqdm
+openpyxl
