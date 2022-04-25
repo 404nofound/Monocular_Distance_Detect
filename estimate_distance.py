@@ -33,8 +33,9 @@ print('Nunpy Version:', np.__version__)
 
 class DistanceEstimation:
     def __init__(self):
-        self.W = 640
-        self.H = 480
+        #自己相机的图像尺寸
+        self.W = 1280
+        self.H = 720
         self.excel_path = r'./camera_parameters.xlsx'
 
     def camera_parameters(self, excel_path):
@@ -49,15 +50,19 @@ class DistanceEstimation:
     def object_point_world_position(self, u, v, w, h, p, k):
         u1 = u
         v1 = v + h / 2
-        print('关键点坐标：', u1, v1)
+        print('图像坐标系关键点：', u1, v1)
 
-        alpha = -(90 + 0) / (2 * math.pi)
-        peta = 0
-        gama = -90 / (2 * math.pi)
+        #alpha = -(90 + 0) / (2 * math.pi)
+        #peta = 0
+        #gama = -90 / (2 * math.pi)
 
         fx = k[0, 0]
         fy = k[1, 1]
+        #相机高度
+        #关键参数，不准会导致结果不对
         H = 1
+        #相机与水平线夹角, 默认为0 相机镜头正对前方，无倾斜
+        #关键参数，不准会导致结果不对
         angle_a = 0
         angle_b = math.atan((v1 - self.H / 2) / fy)
         angle_c = angle_b + angle_a
@@ -73,8 +78,10 @@ class DistanceEstimation:
         point_c = np.transpose(point_c)
         print('point_c', point_c)
         print('k_inv', k_inv)
+        #相机坐标系下的关键点位置
         c_position = np.matmul(k_inv, depth * point_c)
-        print('c_position', c_position)
+        print('相机坐标系c_position', c_position)
+        #世界坐标系下
         c_position = np.append(c_position, 1)
         c_position = np.transpose(c_position)
         c_position = np.matmul(p_inv, c_position)
@@ -86,11 +93,14 @@ class DistanceEstimation:
         print('=' * 50)
         print('开始测距')
         fig = go.Figure()
+        #p外参矩阵, k内参矩阵
         p, k = self.camera_parameters(self.excel_path)
         if len(kuang):
             obj_position = []
             u, v, w, h = kuang[1] * self.W, kuang[2] * self.H, kuang[3] * self.W, kuang[4] * self.H
-            print('目标框', u, v, w, h)
+            # u,v中心点坐标 w,h框宽和框高
+            print('中心点', u, v)
+            print('框宽/高', w, h)
             d1 = self.object_point_world_position(u, v, w, h, p, k)
         distance = 0
         print('距离', d1)
@@ -229,8 +239,14 @@ class DistanceEstimation:
                             c = int(cls)  # integer class
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                             if label != None and distance!=0:
-                                label = label + ' ' + str('%.1f' % d[0]) + 'm'+ str('%.1f' % d[1]) + 'm'
+                                #label = label + ' ' + str('%.1f' % d[0]) + 'm'+ str('%.1f' % d[1]) + 'm'
+                                label = label + ' ' + str('%.1f' % distance) + 'm'
                             plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
+
+                            center = (int(kuang[1]*1280),int(kuang[2]*720+kuang[4]*720/2))
+                            #v1 = v + h / 2
+                            #print('底点坐标：', center)
+                            cv2.circle(im0,(center),1,colors(c, True),line_thickness*2)
                             if save_crop:
                                 save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
