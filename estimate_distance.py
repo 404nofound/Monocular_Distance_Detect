@@ -60,7 +60,7 @@ class DistanceEstimation:
         fy = k[1, 1]
         #相机高度
         #关键参数，不准会导致结果不对
-        H = 1
+        H = 0.4
         #相机与水平线夹角, 默认为0 相机镜头正对前方，无倾斜
         #关键参数，不准会导致结果不对
         angle_a = 0
@@ -86,11 +86,12 @@ class DistanceEstimation:
         c_position = np.transpose(c_position)
         c_position = np.matmul(p_inv, c_position)
         d1 = np.array((c_position[0], c_position[1]), dtype=float)
+
         return d1
 
 
     def distance(self, kuang, xw=5, yw=0.1):
-        print('=' * 50)
+        print('\n','=' * 50)
         print('开始测距')
         fig = go.Figure()
         #p外参矩阵, k内参矩阵
@@ -108,6 +109,7 @@ class DistanceEstimation:
             d1[:] = 0
         else:
             distance = math.sqrt(math.pow(d1[0], 2) + math.pow(d1[1], 2))
+
         return distance, d1
 
 
@@ -120,6 +122,7 @@ class DistanceEstimation:
            device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
            view_img=False,  # show results
            save_txt=False,  # save results to *.txt
+           save_csv=False,
            save_conf=False,  # save confidences in --save-txt labels
            save_crop=False,  # save cropped prediction boxes
            nosave=False,  # do not save images/videos
@@ -176,7 +179,13 @@ class DistanceEstimation:
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         t0 = time.time()
+
+        storage = []
+
         for path, img, im0s, vid_cap in dataset:
+            #print(path)
+            name_str=path.split('\\')[-1].split('.')[0]
+            #print(name_str)
             img = torch.from_numpy(img).to(device)
             img = img.half() if half else img.float()  # uint8 to fp16/32
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -194,6 +203,8 @@ class DistanceEstimation:
             # Apply Classifier
             if classify:
                 pred = apply_classifier(pred, modelc, img, im0s)
+
+            #storage = []
 
             # Process detections 检测过程
             for i, det in enumerate(pred):  # detections per image
@@ -215,35 +226,54 @@ class DistanceEstimation:
 
                     # Print results
                     for c in det[:, -1].unique():
-                        if not names[int(c)] in ['person', 'car', 'truck', 'bicycle', 'motorcycle', 'bus', 'traffic light', 'stop sign']:
+                        if not names[int(c)] in ['person', 'car', 'truck', 'bicycle', 'motorcycle', 'bus']:
                             continue
                         n = (det[:, -1] == c).sum()  # detections per class
                         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                     # Write results
                     for *xyxy, conf, cls in reversed(det):
-                        if not names[int(cls)] in ['person','chair', 'car', 'truck', 'bicycle', 'motorcycle', 'bus', 'traffic light', 'stop sign']:
+                        if not names[int(cls)] in ['person', 'car', 'truck', 'bicycle', 'motorcycle', 'bus']:
                             continue
                         n = (det[:, -1] == c).sum()  # detections per class
                         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
                         kuang = [int(cls), xywh[0], xywh[1], xywh[2], xywh[3]]
-                        if save_txt:  # Write to file
-                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized
-                            with open(txt_path + '.txt', 'a') as f:
-                                f.write(('%g ' * 5 + '\n') % (int(cls), *xywh))
+                        #if save_txt:  # Write to file
+                            #xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized
+                            #with open(txt_path + '.txt', 'a') as f:
+                                #f.write(('%g ' * 5 + '\n') % (int(cls), *xywh))
 
                         distance, d = self.distance(kuang)
+
+                        location  = -999
+                        if ((kuang[1] * self.W) - (self.W/2)) > 10:
+                            location = 1
+                        elif ((kuang[1] * self.W) - (self.W/2)) < -10:
+                            location = -1
+                        else:
+                            location = 0
+
+                        if save_txt:  # Write to file
+                            #xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized
+                            #print(path)
+                            #print(str(save_dir / source.split('/')[-1].split('.')[0]) + '.txt')
+                            with open(str(save_dir / path.split('/')[-1].split('.')[0]) + '.txt', 'a') as f:
+                                f.write(('%g %s %g %g %g' + '\n') % (frame, names[int(cls)], (kuang[1] * self.W), location, distance))
+
+                        if save_csv:
+                            storage.append([name_str, frame, names[int(cls)], (kuang[1] * self.W), kuang[2]*self.H+kuang[4]*self.H/2, distance, d[0], d[1]])
+
 
                         if save_img or save_crop or view_img:  # Add bbox to image
                             c = int(cls)  # integer class
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                             if label != None and distance!=0:
                                 #label = label + ' ' + str('%.1f' % d[0]) + 'm'+ str('%.1f' % d[1]) + 'm'
-                                label = label + ' ' + str('%.1f' % distance) + 'm'
+                                label = label + ' ' + str('%.1f' % d[0]) + 'm ' + str(location)
                             plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
 
-                            center = (int(kuang[1]*1280),int(kuang[2]*720+kuang[4]*720/2))
+                            center = (int(kuang[1]*self.W),int(kuang[2]*self.H+kuang[4]*self.H/2))
                             #v1 = v + h / 2
                             #print('底点坐标：', center)
                             cv2.circle(im0,(center),1,colors(c, True),line_thickness*2)
@@ -277,6 +307,10 @@ class DistanceEstimation:
                             vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                         vid_writer.write(im0)
 
+        if save_csv:
+            df = pd.DataFrame(storage)
+            df.to_excel(str(save_dir / 'total.xlsx'),index=False)
+
         if save_txt or save_img:
             s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
             print(f"Results saved to {save_dir}{s}")
@@ -289,7 +323,7 @@ class DistanceEstimation:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='weights/yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='weights/yolov5l.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='0', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.5, help='confidence threshold')
@@ -298,6 +332,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
     parser.add_argument('--save_txt',default=False, action='store_true', help='save results to *.txt')
+    parser.add_argument('--save_csv',default=False, action='store_true', help='save results to *.csv')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')

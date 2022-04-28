@@ -2,20 +2,47 @@
 
 Copied & modified from [KinkangLiu](https://github.com/KinkangLiu/Monocular_Distance_Detect)
 
-
-
 ```
 # Run
 python estimate_distance.py --source YOUR_PATH\data\images\demo.mp4 --view-img
 ```
 
+## Output
 
+```
+label = label + ' ' + str('%.1f' % d[0]) + 'm ' + str(location)
+```
 
-# Tips
+`d0` denotes distance.
 
-Using **Python3.8**
+`location` denotes the pixel index in x-axis of image coordinate.
 
-PyTorch的版本1.9.0，PyTorch的历史版本[Previous PyTorch Versions | PyTorch](https://pytorch.org/get-started/previous-versions/)
+## Important Parameters
+
+```
+def __init__(self):
+    #自己相机的图像尺寸
+    self.W = 1280
+    self.H = 720
+```
+
+```
+#相机高度
+#关键参数，不准会导致结果不对
+H = 0.4
+```
+
+```
+#相机与水平线夹角, 默认为0 相机镜头正对前方，无倾斜
+#关键参数，不准会导致结果不对
+angle_a = 0
+```
+
+## Tips
+
+- **Python3.8**
+
+- **PyTorch version: 1.9.0**，PyTorch historical archive [Previous PyTorch Versions | PyTorch](https://pytorch.org/get-started/previous-versions/)
 
 ```
 # CUDA 10.2
