@@ -7,6 +7,8 @@ Copied & modified from [KinkangLiu](https://github.com/KinkangLiu/Monocular_Dist
 python estimate_distance.py --source YOUR_PATH\data\images\demo.mp4 --view-img
 ```
 
+<video src="./test1.mp4"></video>
+
 ## Output
 
 ```
@@ -15,7 +17,7 @@ label = label + ' ' + str('%.1f' % d[0]) + 'm ' + str(location)
 
 `d0` denotes distance.
 
-`location` denotes the pixel index in x-axis of image coordinate.
+`location`: -1 means the targeted vehicle in the left; 0 in the center; 1 in the right.
 
 ## Important Parameters
 
