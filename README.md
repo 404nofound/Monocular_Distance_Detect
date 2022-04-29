@@ -7,7 +7,7 @@ Copied & modified from [KinkangLiu](https://github.com/KinkangLiu/Monocular_Dist
 python estimate_distance.py --source YOUR_PATH\data\images\demo.mp4 --view-img
 ```
 
-<video src="./test1.mp4"></video>
+<video src="https://github.com/404nofound/Monocular_Distance_Detect/blob/main/test1.mp4"></video>
 
 ## Output
 
