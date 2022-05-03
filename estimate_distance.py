@@ -207,6 +207,9 @@ class DistanceEstimation:
             #storage = []
 
             # Process detections 检测过程
+            pre_width=-999
+            pre_frame=-999
+            v=-999
             for i, det in enumerate(pred):  # detections per image
                 if webcam:  # batch_size >= 1
                     p, s, im0, frame = path[i], f'{i}: ', im0s[i].copy(), dataset.count  #path[i]为source 即为0
@@ -247,12 +250,18 @@ class DistanceEstimation:
                         distance, d = self.distance(kuang)
 
                         location  = -999
-                        if ((kuang[1] * self.W) - (self.W/2)) > 10:
+                        if ((kuang[1] * self.W) - (self.W/2)) > 20:
                             location = 1
-                        elif ((kuang[1] * self.W) - (self.W/2)) < -10:
+                        elif ((kuang[1] * self.W) - (self.W/2)) < -20:
                             location = -1
                         else:
                             location = 0
+
+                        # if pre_frame==-999:
+                        #     pre_frame=i
+                        #     pre_width=kuang[3]*self.W/2
+                        # else:
+                        #     v=pre_d*((pre_width-(kuang[3]*self.W/2))/(kuang[3]*self.W/2))/(0.05*abs(i-pre_frame))
 
                         if save_txt:  # Write to file
                             #xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized
@@ -262,21 +271,22 @@ class DistanceEstimation:
                                 f.write(('%g %s %g %g %g' + '\n') % (frame, names[int(cls)], (kuang[1] * self.W), location, distance))
 
                         if save_csv:
-                            storage.append([name_str, frame, names[int(cls)], (kuang[1] * self.W), kuang[2]*self.H+kuang[4]*self.H/2, distance, d[0], d[1]])
+                            storage.append([name_str, frame, names[int(cls)], (kuang[1] * self.W), kuang[2]*self.H+kuang[4]*self.H/2, distance, d[0], d[1], (kuang[3]*self.W), (kuang[4]*self.H)])
 
-
+                        save_img=False
                         if save_img or save_crop or view_img:  # Add bbox to image
                             c = int(cls)  # integer class
                             label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                            if label != None and distance!=0:
+                            #if label != None and d0!=0 and v!=-999:
+                            if label != None and d[0]!=0:
                                 #label = label + ' ' + str('%.1f' % d[0]) + 'm'+ str('%.1f' % d[1]) + 'm'
                                 label = label + ' ' + str('%.1f' % d[0]) + 'm ' + str(location)
                             plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
 
-                            center = (int(kuang[1]*self.W),int(kuang[2]*self.H+kuang[4]*self.H/2))
+                            center_bottom = (int(kuang[1]*self.W),int(kuang[2]*self.H+kuang[4]*self.H/2))
                             #v1 = v + h / 2
                             #print('底点坐标：', center)
-                            cv2.circle(im0,(center),1,colors(c, True),line_thickness*2)
+                            cv2.circle(im0,(center_bottom),1,colors(c, True),line_thickness*2)
                             if save_crop:
                                 save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
