@@ -1,6 +1,6 @@
 # Monocular_Distance_Detect
 
-Copied & modified from [KinkangLiu](https://github.com/KinkangLiu/Monocular_Distance_Detect)
+Modified from [KinkangLiu](https://github.com/KinkangLiu/Monocular_Distance_Detect)
 
 ```
 # Run
