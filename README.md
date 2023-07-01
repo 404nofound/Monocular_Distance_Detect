@@ -1,6 +1,6 @@
 # Monocular_Distance_Detect
 
-Modified from [KinkangLiu](https://github.com/KinkangLiu/Monocular_Distance_Detect)
+Modified based on [KinkangLiu](https://github.com/KinkangLiu/Monocular_Distance_Detect)
 
 ```
 # Run
@@ -52,3 +52,6 @@ angle_a = 0
 # CUDA 10.2
 conda install pytorch==1.9.0 torchvision==0.10.0 torchaudio==0.9.0 cudatoolkit=10.2 -c pytorch
 ```
+## Notes
+
+GPU NVIDIA 3060 and above: **PyTorch version >= 1.11.0**
