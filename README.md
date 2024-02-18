@@ -2,7 +2,7 @@
 
 Algorithm based on Yolo v5 to detect the front vehicles' distance
 
-使用Yolo v5和 Deep Sort实现车辆间距离计算
+使用Yolo v5实现车辆间距离计算
 
 Modified based on [KinkangLiu](https://github.com/KinkangLiu/Monocular_Distance_Detect)
 
